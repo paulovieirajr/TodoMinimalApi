@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Task = TodoMinimalApi.Models.Task;
+using TaskModel = TodoMinimalApi.Models.TaskModel;
 
 namespace TodoMinimalApi.Context;
 
@@ -9,5 +9,5 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<Task> Tasks => Set<Task>();
+    public DbSet<TaskModel> Tasks => Set<TaskModel>();
 }

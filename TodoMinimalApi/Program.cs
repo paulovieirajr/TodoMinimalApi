@@ -27,6 +27,12 @@ app.MapGet("/tasks", async (AppDbContext context) =>
     return tasks.Count > 0 ? Results.Ok(tasks) : Results.NotFound();
 });
 
+app.MapGet("tasks/done", async (AppDbContext context) =>
+{
+    var tasks = await context.Tasks.Where(task => task.IsCompleted).ToListAsync();
+    return tasks.Count > 0 ? Results.Ok(tasks) : Results.NotFound();
+});
+
 app.MapGet("/tasks/{id}", async (AppDbContext context, int id) =>
 {
     var task = await context.Tasks.FindAsync(id);
@@ -34,12 +40,45 @@ app.MapGet("/tasks/{id}", async (AppDbContext context, int id) =>
 });
 
 app.MapPost("/tasks", async (AppDbContext context, TaskDto taskDto) =>
+{
+    var task = new TaskModel(taskDto.Title, false);
+    await context.Tasks.AddAsync(task);
+    await context.SaveChangesAsync();
+    return Results.Created($"/tasks/{task.Id}", task);
+});
+
+app.MapPut("/tasks/{id}", async (AppDbContext context, int id, TaskModel taskModel) =>
+{
+    if (id != taskModel.Id)
     {
-        var task = new TaskModel(taskDto.Title, false);
-        await context.Tasks.AddAsync(task);
-        await context.SaveChangesAsync();
-        return Results.Created($"/tasks/{task.Id}", task);
-    });
+        return Results.BadRequest("Id and taskModel.Id must be the same");
+    }
+
+    var task = await context.Tasks.FindAsync(id);
+    if (task is null)
+    {
+        return Results.NotFound();
+    }
+
+    task.Title = taskModel.Title;
+    task.IsCompleted = taskModel.IsCompleted;
+
+    await context.SaveChangesAsync();
+    return Results.Ok(task);
+});
+
+app.MapDelete("/tasks/{id}", async (AppDbContext context, int id) =>
+{
+    var taskModel = await context.Tasks.FindAsync(id);
+    if (taskModel is null)
+    {
+        return Results.NotFound();
+    }
+
+    context.Tasks.Remove(taskModel);
+    await context.SaveChangesAsync();
+    return Results.NoContent();
+});
 
 
 app.Run();
